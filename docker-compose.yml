@@ -1,0 +1,76 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: cloud-os-postgres
+    environment:
+      POSTGRES_USER: cloud_os
+      POSTGRES_PASSWORD: secure_password
+      POSTGRES_DB: cloud_os
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - cloud-os-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: cloud-os-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - cloud-os-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.backend
+    container_name: cloud-os-backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://cloud_os:secure_password@postgres:5432/cloud_os
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: change-me-in-production
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./src:/app/src
+      - ./models:/app/models
+    restart: unless-stopped
+    networks:
+      - cloud-os-network
+    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.frontend
+    container_name: cloud-os-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/web:/app
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - cloud-os-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  cloud-os-network:
+    driver: bridge
