@@ -1,0 +1,37 @@
+# infra/kubernetes/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cloud-os-ingress
+  namespace: cloud-os
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.cloud-os.io
+    - cloud-os.io
+    secretName: cloud-os-tls
+  rules:
+  - host: api.cloud-os.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloud-os-backend
+            port:
+              number: 8000
+  - host: cloud-os.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloud-os-frontend
+            port:
+              number: 80
