@@ -1,0 +1,36 @@
+# infra/kubernetes/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-os-backend
+  namespace: cloud-os
+  labels:
+    app: cloud-os
+    component: backend
+spec:
+  selector:
+    app: cloud-os
+    component: backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+    name: http
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-os-frontend
+  namespace: cloud-os
+  labels:
+    app: cloud-os
+    component: frontend
+spec:
+  selector:
+    app: cloud-os
+    component: frontend
+  ports:
+  - port: 80
+    targetPort: 3000
+    name: http
+  type: LoadBalancer
